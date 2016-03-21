@@ -43,9 +43,9 @@ const TERMINAL_VELOCITY = 50
 
 const PLAYER_HEIGHT = 2
 
-var vertexBuffer : GLuint
-var indexBuffer: GLuint
-var uvBuffer: GLuint
+var vertexBuffer : BufferRef
+var indexBuffer: BufferRef
+var uvBuffer: BufferRef
 
 
 proc cube_vertices(x, y, z, n: float32): seq[float32] =
