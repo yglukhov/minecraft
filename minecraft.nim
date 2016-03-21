@@ -1021,14 +1021,8 @@ proc drawModel(m: Model) =
 
     gl.disable(gl.DEPTH_TEST)
 
-    when defined(js):
-        {.emit: """
-        `gl`.bindBuffer(`gl`.ELEMENT_ARRAY_BUFFER, null);
-        `gl`.bindBuffer(`gl`.ARRAY_BUFFER, null);
-        """.}
-    else:
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
-        gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, invalidBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, invalidBuffer)
 
 import rod.edit_view
 
