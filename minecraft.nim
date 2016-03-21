@@ -18,12 +18,6 @@ import rod.component
 import rod.component.camera
 import rod.quaternion
 
-#from collections import deque
-#from pyglet import image
-#from pyglet.gl import *
-#from pyglet.graphics import TextureGroup
-#from pyglet.window import key, mouse
-
 type iVec3 = TVector[3, GLint]
 
 
@@ -90,8 +84,6 @@ proc tex_coords(top, bottom, side: tuple[x, y: int]): BlockTexture =
     result.uv.add(side)
     result.uv.add(side)
     result.uv.add(side)
-
-const TEXTURE_PATH = "texture.png"
 
 let GRASS = tex_coords((1, 0), (0, 1), (0, 0))
 let SAND = tex_coords((1, 1), (1, 1), (1, 1))
@@ -192,7 +184,7 @@ type Model = ref object
     shown_vertex_lists: Table[iVec3, int]
 
     # Mapping from sector to a list of positions inside that sector.
-    sectors: Table[iVec3, Table[iVec3, bool]]
+    sectors: Table[iVec3, TableRef[iVec3, bool]]
 
     # Simple function queue implementation. The queue is populated with
     # show_block_aux() and hide_block_aux() calls
@@ -207,13 +199,13 @@ proc newModel(): Model =
 
         # A mapping from position to the texture of the block at that position.
         # This defines all the blocks that are currently in the world.
-        result.world = initTable[iVec3, BlockTexture](256)
+        result.world = initTable[iVec3, BlockTexture]()
 
         # Same mapping as `world` but only contains blocks that are shown.
-        result.shown = initTable[iVec3, BlockTexture](256)
+        result.shown = initTable[iVec3, BlockTexture]()
 
         # Mapping from sector to a list of positions inside that sector.
-        result.sectors = initTable[iVec3, Table[iVec3, bool]](256)
+        result.sectors = initTable[iVec3, TableRef[iVec3, bool]]()
 
         result.initialize()
 
@@ -298,8 +290,8 @@ proc exposed(self: Model, position: iVec3): bool =
 proc hide_block(self: Model, position: iVec3, immediate=true)
 proc check_neighbors(self: Model, position: iVec3)
 
-template excl(t: var Table[iVec3, bool], k: iVec3) = t.del(k)
-template incl(t: var Table[iVec3, bool], k: iVec3) = t[k] = true
+template excl(t: var Table[iVec3, bool] | TableRef[iVec3, bool], k: iVec3) = t.del(k)
+template incl(t: var Table[iVec3, bool] | TableRef[iVec3, bool], k: iVec3) = t[k] = true
 
 proc remove_block(self: Model, position: iVec3, immediate=true) =
         ##[ Remove the block at the given `position`.
@@ -343,7 +335,13 @@ proc add_block(self: Model, position: iVec3, texture: BlockTexture, immediate=tr
         if position in self.world:
             self.remove_block(position, immediate)
         self.world[position] = texture
-        self.sectors.setdefault(sectorize(position), initTable[iVec3, bool](256)).incl(position)
+        let sp = sectorize(position)
+        if sp in self.sectors:
+            self.sectors[sp].incl(position)
+        else:
+            self.sectors[sp] = newTable[iVec3, bool]()
+            self.sectors[sp].incl(position)
+
         if immediate or true:
             if self.exposed(position):
                 self.show_block(position)
@@ -438,18 +436,22 @@ proc show_sector(self: Model, sector: iVec3) =
         drawn to the canvas.
 
         ]##
-        for position, _ in self.sectors.getOrDefault(sector):
-            if position notin self.shown and self.exposed(position):
-                self.show_block(position, false)
+        let s = self.sectors.getOrDefault(sector)
+        if not s.isNil:
+            for position, _ in s:
+                if position notin self.shown and self.exposed(position):
+                    self.show_block(position, false)
 
 proc hide_sector(self: Model, sector: iVec3) =
         ##[ Ensure all blocks in the given sector that should be hidden are
         removed from the canvas.
 
         ]##
-        for position, _ in self.sectors.getOrDefault(sector):
-            if position in self.shown:
-                self.hide_block(position, false)
+        let s = self.sectors.getOrDefault(sector)
+        if not s.isNil:
+            for position, _ in s:
+                if position in self.shown:
+                    self.hide_block(position, false)
 
 proc change_sectors(self: Model, before, after: iVec3) =
         ##[ Move from sector `before` to sector `after`. A sector is a
@@ -774,12 +776,6 @@ proc on_mouse_press(self: GameView, x, y: float32, button, modifiers):
 
 var lastPos: Point
 
-method onInterceptTouchEv*(v: GameView, e: var Event): bool =
-    # echo v.name(), " onInterceptTouchEv ",e.localPosition
-    result = true
-    echo "intercepts"
-    discard
-
 method onTouchEv(self: GameView, e: var Event): bool =
         ##[ Called when the player moves the mouse.
 
@@ -956,22 +952,6 @@ method draw(self: GameView, r: Rect) =
 ]#
 
 
-proc setup() =
-    ## Basic OpenGL configuration.
-
-    # Set the color of "clear", i.e. the sky, in rgba.
-    glClearColor(0.5, 0.69, 1.0, 1)
-    # Enable culling (not rendering) of back-facing facets -- facets that aren't
-    # visible to you.
-    glEnable(GL_CULL_FACE)
-    # Set the texture minification/magnification function to GL_NEAREST (nearest
-    # in Manhattan distance) to the specified texture coordinates. GL_NEAREST
-    # "is generally faster than GL_LINEAR, but it can produce textured images
-    # with sharper edges because the transition between texture elements is not
-    # as smooth."
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-
 var shader : ProgramRef
 
 let vs = """
@@ -1091,8 +1071,6 @@ proc startApplication() =
 
     # Hide the mouse cursor and prevent the mouse from leaving the window.
 #    window.set_exclusive_mouse(True)
-#    setup()
-#    pyglet.app.run()
 
 when defined js:
     import dom
