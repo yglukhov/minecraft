@@ -97,6 +97,8 @@ proc createBuffers() =
     indexBuffer = gl.createBuffer()
     uvBuffer = gl.createBuffer()
 
+    gl.enable(gl.CULL_FACE)
+
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, cube_vertices(0, 0, 0, 0.5), gl.STATIC_DRAW)
 
