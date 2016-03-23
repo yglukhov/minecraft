@@ -5,6 +5,7 @@
 # has to have permissions to commit (e.g. public_repo)
 
 # The variable itself then has to be set in travis-ci project settings.
+set -ex
 
 if [ "$GH_KEY" \!= "" ]
 then
