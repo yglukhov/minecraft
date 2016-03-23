@@ -20,7 +20,9 @@ then
     git config user.name "Travis CI"
     git config user.email "autodocgen@example.com"
 
-    git add "$GIT_WORK_TREE"
+    git status
+
+    git add .
 
     git status
 
