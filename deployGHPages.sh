@@ -10,6 +10,7 @@ set -ex
 if [ "$GH_KEY" \!= "" ]
 then
     cd "$1"
+    ls -la
     git init
 
     git config user.name "Travis CI"
