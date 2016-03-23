@@ -9,14 +9,20 @@ set -ex
 
 if [ "$GH_KEY" \!= "" ]
 then
-    cd "$1"
-    ls -la
+    export "GIT_DIR=$TMPDIR/deployGHPages.git"
+    export "GIT_WORK_TREE=$1"
+    mkdir -p "$GIT_DIR"
+
     git init
+
+    ls -la $GIT_DIR
 
     git config user.name "Travis CI"
     git config user.email "autodocgen@example.com"
 
-    git add .
+    git add "$GIT_WORK_TREE"
+
+    git status
 
     git commit -m "Deploy to GitHub Pages"
 
