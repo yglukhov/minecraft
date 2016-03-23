@@ -9,7 +9,7 @@ set -ex
 
 if [ "$GH_KEY" \!= "" ]
 then
-    export "GIT_DIR=$TMPDIR/deployGHPages.git"
+    export "GIT_DIR=$HOME/deployGHPages.git"
     export "GIT_WORK_TREE=$1"
     mkdir -p "$GIT_DIR"
 
