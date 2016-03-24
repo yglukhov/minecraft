@@ -4,9 +4,9 @@
 # token. The token may be generated at https://github.com/settings/tokens and
 # has to have permissions to commit (e.g. public_repo)
 
-# The variable itself then has to be set in travis-ci project settings.
-set -ex
+set -e
 
+# The variable itself then has to be set in travis-ci project settings.
 if [ "$GH_KEY" \!= "" ]
 then
     export "GIT_DIR=$HOME/deployGHPages.git"
@@ -15,16 +15,10 @@ then
 
     git init
 
-    ls -la $GIT_DIR
-
     git config user.name "Travis CI"
     git config user.email "autodocgen@example.com"
 
-    git status
-
     git add .
-
-    git status
 
     git commit -m "Deploy to GitHub Pages"
 
