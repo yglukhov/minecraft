@@ -1,4 +1,4 @@
-import math, times, tables, lists, sets
+import math, times, tables, lists, sets, random
 
 import opengl
 
