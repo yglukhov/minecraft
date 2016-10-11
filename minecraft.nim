@@ -134,7 +134,7 @@ let FACES = [
 ]
 
 
-proc normalize(position: Vector3): iVec3 =
+proc normalized(position: Vector3): iVec3 =
     ##[ Accepts `position` of arbitrary precision and returns the block
     containing that position.
 
@@ -165,7 +165,7 @@ proc sectorize(position: iVec3): iVec3 =
     result.x = GLint(position.x / SECTOR_SIZE)
     result.z = GLint(position.z / SECTOR_SIZE)
 
-proc sectorize(position: Vector3): iVec3 = sectorize(normalize(position))
+proc sectorize(position: Vector3): iVec3 = sectorize(normalized(position))
 
 
 type Model = ref object
@@ -270,7 +270,7 @@ proc hit_test(self: Model, position: Vector3, vector: Vector3, max_distance: int
         let dp = vector / float32(m)
         var previous : iVec3
         for i in 0 ..< max_distance * m:
-            let key = normalize(p)
+            var key = p.normalized()
             if key != previous and key in self.world:
                 result.ok = true
                 result.bl = key
@@ -720,7 +720,7 @@ proc collide(self: GameView, position: Vector3, height: GLint): Vector3 =
         # tall grass. If >= .5, you'll fall through the ground.
         let pad = 0.25
         result = position
-        let np = normalize(position)
+        let np = normalized(position)
         for face in FACES:  # check all surrounding blocks
             for i in 0 .. 2:  # check each dimension independently
                 if face[i] == 0:
