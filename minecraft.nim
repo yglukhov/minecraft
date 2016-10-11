@@ -18,6 +18,11 @@ import rod.component
 import rod.component.camera
 import rod.quaternion
 
+const enableEditor = not defined(release)
+
+when enableEditor:
+    import rod.edit_view
+
 type iVec3 = TVector[3, GLint]
 
 
@@ -401,7 +406,8 @@ proc show_block_aux(self: Model, position: iVec3, texture: BlockTexture) =
             generate.
 
         ]##
-        let vertex_data = cube_vertices(position.x.float32, position.y.float32, position.z.float32, 0.5)
+        discard
+        #let vertex_data = cube_vertices(position.x.float32, position.y.float32, position.z.float32, 0.5)
         # create vertex list
         # FIXME Maybe `add_indexed()` should be used instead
         #self.shown_vertex_lists[position] = self.batch.add(24, GL_QUADS, self.group,
@@ -635,12 +641,11 @@ proc get_motion_vector(self: GameView): Vector3 =
                     result.y *= -1
                 # When you are flying up or down, you have less left and right
                 # motion.
-                result.x = cos(x_angle) * m
-                result.z = sin(x_angle) * m
+                result.x = sin(x_angle) * m
+                result.z = cos(x_angle) * m
             else:
-                result.y = 0.0
-                result.x = cos(x_angle)
-                result.z = sin(x_angle)
+                result.x = sin(x_angle)
+                result.z = cos(x_angle)
 
 proc update_aux(self: GameView, dt: float32)
 
@@ -695,7 +700,7 @@ proc update_aux(self: GameView, dt: float32) =
             mv.y += self.dy * dt
         # collisions
         self.position = self.collide(self.position + mv, PLAYER_HEIGHT)
-        self.camera.node.translation = self.position
+        self.camera.node.position = self.position
 
 proc collide(self: GameView, position: Vector3, height: GLint): Vector3 =
         ##[ Checks to see if the player at the given `position` and `height`
@@ -826,13 +831,13 @@ method onKeyDown(self: GameView, e: var Event): bool =
 
         case e.keyCode
         of VirtualKey.W:
-            self.strafe[0] -= 1
-        of VirtualKey.S:
-            self.strafe[0] += 1
-        of VirtualKey.A:
             self.strafe[1] -= 1
-        of VirtualKey.D:
+        of VirtualKey.S:
             self.strafe[1] += 1
+        of VirtualKey.A:
+            self.strafe[0] -= 1
+        of VirtualKey.D:
+            self.strafe[0] += 1
         of VirtualKey.Space:
             if self.dy == 0:
                 self.dy = JUMP_SPEED
@@ -862,13 +867,13 @@ method onKeyUp(self: GameView, e: var Event): bool =
         if e.repeat: return
         case e.keyCode
         of VirtualKey.W:
-            self.strafe[0] += 1
-        of VirtualKey.S:
-            self.strafe[0] -= 1
-        of VirtualKey.A:
             self.strafe[1] += 1
-        of VirtualKey.D:
+        of VirtualKey.S:
             self.strafe[1] -= 1
+        of VirtualKey.A:
+            self.strafe[0] += 1
+        of VirtualKey.D:
+            self.strafe[0] -= 1
         else:
             discard
 
@@ -996,6 +1001,7 @@ proc drawModel(m: Model) =
         createBuffers()
         shader = gl.newShaderProgram(vs, fs, [(0.GLuint, "aPosition"), (1.GLuint, "aTexCoord")])
     gl.useProgram(shader)
+    gl.enableVertexAttribArray(0)
     gl.uniformMatrix4fv(gl.getUniformLocation(shader, "uModelViewProjectionMatrix"), false, c.transform)
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
     gl.vertexAttribPointer(0, 3, cGL_FLOAT, true, 0, 0)
@@ -1026,8 +1032,6 @@ proc drawModel(m: Model) =
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, invalidBuffer)
     gl.bindBuffer(gl.ARRAY_BUFFER, invalidBuffer)
 
-import rod.edit_view
-
 proc startApplication() =
     var mainWindow: Window
     when defined(ios) or defined(android):
@@ -1041,7 +1045,7 @@ proc startApplication() =
     mainView.rootNode = newNode()
     let cn = mainView.rootNode.newChild("camera")
     let cam = cn.component(Camera) # Create camera
-    cn.translation = newVector3(0, 0, 5)
+    cn.position = newVector3(0, 0, 5)
     cam.zNear = 0.1
     cam.zFar = 500
     let worldNode = mainView.rootNode.newChild("world")
@@ -1064,19 +1068,8 @@ proc startApplication() =
 
     mainWindow.addAnimation(a)
 
-
     # Hide the mouse cursor and prevent the mouse from leaving the window.
-#    window.set_exclusive_mouse(True)
+    # window.set_exclusive_mouse(True)
 
-when defined js:
-    import dom
-    dom.window.onload = proc (e: dom.Event) =
-        startApplication()
-else:
-    try:
-        startApplication()
-        runUntilQuit()
-    except:
-        logi "Exception caught: ", getCurrentExceptionMsg()
-        logi getCurrentException().getStackTrace()
-        quit 1
+runApplication:
+    startApplication()
