@@ -2,21 +2,10 @@ import math, times, tables, lists, sets, random
 
 import opengl
 
-import nimx.window
-import nimx.matrixes
-import nimx.image
-import nimx.animation
-import nimx.system_logger
-import nimx.portable_gl
-import nimx.context
-import nimx.keyboard
-import nimx.view_event_handling_new
-
-import rod.viewport
-import rod.node
-import rod.component
-import rod.component.camera
-import rod.quaternion
+import nimx/[window, matrixes, image, animation, system_logger, portable_gl, context, keyboard, view_event_handling_new]
+import nimx/assets/asset_manager
+import rod/[viewport, node, component, quaternion]
+import rod/component/camera
 
 const enableEditor = not defined(release)
 
@@ -202,7 +191,9 @@ proc initialize(self: Model)
 proc newModel(): Model =
         result.new()
 
-        result.group = imageWithResource("texture.png")
+        let r = result
+        sharedAssetManager().getAssetAtPath("texture.png") do(i: Image, err: string):
+            r.group = i
 
         # A mapping from position to the texture of the block at that position.
         # This defines all the blocks that are currently in the world.
@@ -995,6 +986,7 @@ void main() {
 """
 
 proc drawModel(m: Model) =
+    if m.group.isNil: return
     let c = currentContext()
     let gl = c.gl
     if shader == invalidProgram:
